@@ -124,6 +124,28 @@ extension ShopSettings {
 }
 
 @available(iOS 16.0, *)
+extension StorefrontAPI.Shop {
+    static var testShop: StorefrontAPI.Shop {
+        return StorefrontAPI.Shop(
+            name: "Test Shop",
+            description: "Test description",
+            primaryDomain: StorefrontAPI.ShopDomain(
+                host: "test-shop.myshopify.com",
+                sslEnabled: true,
+                url: GraphQLScalars.URL(URL(string: "https://test-shop.myshopify.com")!)
+            ),
+            shipsToCountries: ["US"],
+            paymentSettings: StorefrontAPI.ShopPaymentSettings(
+                supportedDigitalWallets: ["SHOP_PAY", "APPLE_PAY"],
+                acceptedCardBrands: [.visa, .mastercard, .americanExpress, .discover],
+                countryCode: "US"
+            ),
+            moneyFormat: "${{amount}}"
+        )
+    }
+}
+
+@available(iOS 16.0, *)
 extension ShopifyAcceleratedCheckouts.ApplePayConfiguration {
     static var testConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration {
         return ShopifyAcceleratedCheckouts.ApplePayConfiguration(
@@ -401,6 +423,17 @@ class MockStorefrontAPI: StorefrontAPIProtocol {
 
 @available(iOS 16.0, *)
 class TestStorefrontAPI: MockStorefrontAPI {
+    var shopResult: Result<StorefrontAPI.Shop, Error>?
+    var shopCallCount = 0
+
+    override func shop() async throws -> StorefrontAPI.Shop {
+        shopCallCount += 1
+        guard let result = shopResult else {
+            fatalError("shopResult not configured for TestStorefrontAPI")
+        }
+        return try result.get()
+    }
+
     var cartResult: Result<StorefrontAPI.Cart?, Error>?
 
     override func cart(by _: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart? {
