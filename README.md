@@ -698,7 +698,36 @@ struct MyApp: App {
 }
 ```
 
-If you are building a UIKit surface, wrap the SwiftUI buttons with a `UIHostingController` and provide the same environment objects before adding the view to your hierarchy.
+For UIKit surfaces, use `AcceleratedCheckoutButtonsView` directly:
+
+```swift
+let configuration = ShopifyAcceleratedCheckouts.Configuration(...)
+let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(...)
+
+let checkoutButtons = AcceleratedCheckoutButtonsView(
+    cartID: cartID,
+    configuration: configuration,
+    applePayConfiguration: applePayConfig
+)
+.wallets([.shopPay, .applePay])
+.applePayLabel(.buy)
+.applePayButtonStyle(.whiteOutline)
+.cornerRadius(12)
+.onRenderStateChange { state in
+    // Update loading/error UI
+}
+.onComplete { _ in
+    cartManager.clearCart()
+}
+
+view.addSubview(checkoutButtons)
+checkoutButtons.translatesAutoresizingMaskIntoConstraints = false
+NSLayoutConstraint.activate([
+    checkoutButtons.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+    checkoutButtons.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+    checkoutButtons.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+])
+```
 
 ### Render accelerated checkout buttons
 
@@ -707,7 +736,7 @@ Use `AcceleratedCheckoutButtons` to attach accelerated checkout calls-to-action 
 ```swift
 if #available(iOS 16.0, *) {
     AcceleratedCheckoutButtons(cartID: cartID)
-        .wallets([..shopPay, .applePay])
+        .wallets([.shopPay, .applePay])
 }
 ```
 
