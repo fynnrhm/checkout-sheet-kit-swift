@@ -752,6 +752,60 @@ AcceleratedCheckoutButtons(cartID: cartID)
 
 For custom layouts, compose the buttons inside your own SwiftUI view and reuse that view across surfaces.
 
+### Build your own buttons
+
+If you want to own the UI entirely, use `AcceleratedCheckoutController` and wire your own SwiftUI or UIKit buttons to the exposed wallet controllers. This keeps Shopify's checkout setup, loading state, and wallet flows while leaving rendering to your app.
+
+```swift
+@State private var renderState: RenderState = .loading
+@StateObject private var acceleratedCheckout = AcceleratedCheckoutController(
+    cartID: cartID,
+    configuration: configuration,
+    applePayConfiguration: applePayConfig,
+    eventHandlers: EventHandlers(
+        checkoutDidComplete: { _ in cartManager.clearCart() },
+        checkoutDidFail: { error in logger.error("Accelerated checkout failed: \(error)") },
+        renderStateDidChange: { state in renderState = state }
+    )
+)
+
+var body: some View {
+    VStack(spacing: 12) {
+        Button("Checkout with Shop Pay") {
+            Task { await acceleratedCheckout.shopPay.onPress() }
+        }
+
+        if let applePay = acceleratedCheckout.applePay {
+            Button("Checkout with Apple Pay") {
+                Task { await applePay.onPress() }
+            }
+        }
+    }
+    .task {
+        await acceleratedCheckout.prepare()
+    }
+}
+```
+
+UIKit buttons work the same way. Create the controller once, call `prepare()` when your screen loads, and trigger the wallet controller from your button action.
+
+```swift
+let acceleratedCheckout = AcceleratedCheckoutController(
+    cartID: cartID,
+    configuration: configuration,
+    applePayConfiguration: applePayConfig
+)
+
+Task { await acceleratedCheckout.prepare() }
+
+shopPayButton.addAction(
+    UIAction { _ in
+        Task { await acceleratedCheckout.shopPay.onPress() }
+    },
+    for: .touchUpInside
+)
+```
+
 ### Handle loading, errors, and lifecycle events
 
 Listen for render state changes so you can display matching loading or error UI and only show the buttons when they are ready.

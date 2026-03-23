@@ -117,6 +117,14 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         try await transition(to: presented ? .appleSheetPresented : .reset)
     }
 
+    func finalizePaymentSheetDismissal(notifyCancel: Bool) async {
+        if notifyCancel {
+            await controller.applePaySheetDidCancel()
+        }
+
+        try? await transition(to: .completed)
+    }
+
     func transition(to nextState: ApplePayState) async throws {
         guard state.canTransition(to: nextState) else {
             ShopifyAcceleratedCheckouts.logger.error(

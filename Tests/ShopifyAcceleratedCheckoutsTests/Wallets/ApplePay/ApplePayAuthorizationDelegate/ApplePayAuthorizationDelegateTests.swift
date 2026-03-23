@@ -482,6 +482,28 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
     }
 
+    func test_finalizePaymentSheetDismissal_whenUserCancelled_notifiesCheckoutCancel() async throws {
+        try await delegate.transition(to: .startPaymentRequest)
+        XCTAssertEqual(delegate.state, .appleSheetPresented)
+
+        await delegate.finalizePaymentSheetDismissal(notifyCancel: true)
+
+        XCTAssertEqual(mockController.applePaySheetDidCancelCallCount, 1)
+        XCTAssertEqual(delegate.state, .idle, "Dismissal from Apple Pay should reset back to idle")
+    }
+
+    func test_finalizePaymentSheetDismissal_whenPresentingCheckout_doesNotNotifyCheckoutCancel()
+        async throws
+    {
+        try await delegate.transition(to: .startPaymentRequest)
+        try await delegate.transition(to: .paymentAuthorizationFailed(error: NSError(domain: "test", code: 1)))
+
+        await delegate.finalizePaymentSheetDismissal(notifyCancel: false)
+
+        XCTAssertEqual(mockController.applePaySheetDidCancelCallCount, 0)
+        XCTAssertEqual(mockController.presentCallCount, 1, "Should continue into CSK without sending cancel")
+    }
+
     // MARK: onPresentingCSK()
 
     func test_onPresentingCSK_withValidURL_shouldCallPresentSuccessfully() async throws {
@@ -695,6 +717,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
         var presentCallCount = 0
         var presentCalledWith: URL?
+        var applePaySheetDidCancelCallCount = 0
 
         init() {
             let config = ShopifyAcceleratedCheckouts.Configuration.testConfiguration
@@ -708,6 +731,11 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         func present(url: URL) async throws {
             presentCallCount += 1
             presentCalledWith = url
+        }
+
+        @MainActor
+        func applePaySheetDidCancel() {
+            applePaySheetDidCancelCallCount += 1
         }
     }
 

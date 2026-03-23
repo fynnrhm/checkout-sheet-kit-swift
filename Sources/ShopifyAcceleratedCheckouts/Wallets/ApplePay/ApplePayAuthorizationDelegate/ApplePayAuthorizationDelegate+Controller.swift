@@ -263,9 +263,12 @@ extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegat
 
     func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
         ShopifyAcceleratedCheckouts.logger.debug("paymentAuthorizationControllerDidFinish, state: \(state)")
+        let notifyCancel = state == .appleSheetPresented
 
         controller.dismiss {
-            Task { try? await self.transition(to: .completed) }
+            Task {
+                await self.finalizePaymentSheetDismissal(notifyCancel: notifyCancel)
+            }
         }
     }
 

@@ -170,6 +170,16 @@ class ApplePayViewControllerTests: XCTestCase {
         await fulfillment(of: [cancelCallbackExpectation], timeout: 1.0)
     }
 
+    @MainActor
+    func test_applePaySheetDidCancel_whenInvoked_invokesOnCancelCallback() async {
+        let cancelCallbackExpectation = XCTestExpectation(description: "Apple Pay cancel callback should be invoked")
+        viewController.onCheckoutCancel = { cancelCallbackExpectation.fulfill() }
+
+        viewController.applePaySheetDidCancel()
+
+        await fulfillment(of: [cancelCallbackExpectation], timeout: 1.0)
+    }
+
     // MARK: - WalletController Inheritance
 
     func test_configuration_whenInitialized_usesCorrectStorefront() {
