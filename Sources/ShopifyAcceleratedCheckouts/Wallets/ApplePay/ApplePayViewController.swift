@@ -34,6 +34,15 @@ protocol PayController: AnyObject {
 
     /// Opens ShopifyCheckoutSheetKit
     func present(url: URL) async throws
+
+    /// Notifies the controller that the Apple Pay sheet was dismissed by the buyer.
+    @MainActor func applePaySheetDidCancel()
+}
+
+@available(iOS 16.0, *)
+extension PayController {
+    @MainActor
+    func applePaySheetDidCancel() {}
 }
 
 @available(iOS 16.0, *)
@@ -222,6 +231,11 @@ class ApplePayViewController: WalletController, PayController {
 
     func present(url: URL) async throws {
         try await present(url: url, delegate: self)
+    }
+
+    @MainActor
+    func applePaySheetDidCancel() {
+        onCheckoutCancel?()
     }
 }
 
